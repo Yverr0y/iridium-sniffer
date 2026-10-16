@@ -177,13 +177,13 @@ static void usage(int exitcode) {
 "                             skips aggregate --soapy-gain when any element is set\n"
 "                             use -v to list available gain elements for your device\n"
 "    --soapy-setting=K:V    SoapySDR device setting, via writeSetting (repeatable)\n"
+"                             e.g. bitpack:true (Airspy), biastee_rx:true (bladeRF)\n"
 "    --soapy-device-arg=K:V SoapySDR device arg, applied when the device is\n"
 "                             opened (repeatable). Works with -i soapy-N too.\n"
-"                             Tezuka PlutoSDR: tezuka_format=CS8 for 8-bit\n"
+"                             Tezuka PlutoSDR: tezuka_format:CS8 for 8-bit\n"
 "                             samples on the wire (halves link bandwidth)\n"
 "    --soapy-stream-arg=K:V SoapySDR stream arg, applied at setupStream\n"
-"                             (repeatable). PlutoSDR buffer sizing: bufflen=N\n"
-"                             e.g. bitpack:true (Airspy), biastee_rx:true (bladeRF)\n"
+"                             (repeatable). PlutoSDR buffer sizing: bufflen:N\n"
 "\n"
 "Detection options:\n"
 "    -d, --threshold=DB      burst detection threshold in dB (default: 16.0)\n"
@@ -724,6 +724,10 @@ void parse_options(int argc, char **argv) {
                         errx(1, "--soapy-device-arg requires KEY:VALUE "
                              "(e.g. tezuka_format:CS8)");
                     *colon = '\0';
+                    /* Drivers silently ignore stream args passed at open */
+                    if (strcmp(optarg, "bufflen") == 0)
+                        warnx("bufflen is a stream arg, not a device arg; "
+                              "use --soapy-stream-arg=bufflen:%s", colon + 1);
                     soapy_dev_arg_keys[soapy_dev_arg_count] = strdup(optarg);
                     soapy_dev_arg_vals[soapy_dev_arg_count] = strdup(colon + 1);
                     soapy_dev_arg_count++;

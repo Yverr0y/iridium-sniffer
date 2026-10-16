@@ -74,7 +74,9 @@ hackrf_device *hackrf_setup(void) {
 
 int hackrf_rx_cb(hackrf_transfer *t) {
     unsigned i;
-    sample_buf_t *s = malloc(sizeof(*s) + t->valid_length * 4);
+    sample_buf_t *s = malloc(sizeof(*s) + t->valid_length);
+    if (!s)
+        return 0;
     s->format = SAMPLE_FMT_INT8;
     s->hw_timestamp_ns = 0;
     s->num = t->valid_length / 2;

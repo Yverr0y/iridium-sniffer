@@ -305,9 +305,18 @@ void parse_options(int argc, char **argv);
 
 /* ---- Sample buffer management ---- */
 
+/* Cap the detector backlog by time as well as buffer count. Buffer sizes vary
+ * by backend (a HackRF transfer is 128K samples, a Pluto MTU 312K), so 4096
+ * buffers alone can be a minute or more of samples and gigabytes of RAM. A
+ * detector that far behind will not catch up; dropping keeps memory and output
+ * latency bounded, and the loss is reported as sl: in the status line. */
+#define SAMPLES_QUEUE_MAX_SEC 4
+
 void push_samples(sample_buf_t *buf) {
     atomic_fetch_add(&stat_sample_count, buf->num);
-    if (blocking_queue_add(&samples_queue, buf) == BQ_FULL) {
+    double backlog = (double)samples_queue.queue_size * buf->num;
+    if (backlog >= samp_rate * SAMPLES_QUEUE_MAX_SEC ||
+        blocking_queue_add(&samples_queue, buf) == BQ_FULL) {
         atomic_fetch_add(&stat_n_sample_drops, buf->num);
         if (verbose)
             fprintf(stderr, "WARNING: dropped samples\n");
@@ -1160,6 +1169,9 @@ int main(int argc, char **argv) {
         if (!sdr_started && bladerf_num >= 0) {
             bladerf_dev = bladerf_setup(bladerf_num);
             pthread_create(&bladerf_thread, NULL, bladerf_stream_thread, bladerf_dev);
+#ifdef __linux__
+            pthread_setname_np(bladerf_thread, "sdr-rx");
+#endif
             sdr_started = 1;
         }
 #endif
@@ -1167,6 +1179,9 @@ int main(int argc, char **argv) {
         if (!sdr_started && usrp_serial != NULL) {
             usrp = usrp_setup(usrp_serial);
             pthread_create(&usrp_thread, NULL, usrp_stream_thread, (void *)usrp);
+#ifdef __linux__
+            pthread_setname_np(usrp_thread, "sdr-rx");
+#endif
             sdr_started = 1;
         }
 #endif
@@ -1174,6 +1189,9 @@ int main(int argc, char **argv) {
         if (!sdr_started && (soapy_num >= 0 || soapy_args)) {
             soapy = soapy_setup(soapy_num, soapy_args);
             pthread_create(&soapy_thread, NULL, soapy_stream_thread, (void *)soapy);
+#ifdef __linux__
+            pthread_setname_np(soapy_thread, "sdr-rx");
+#endif
             sdr_started = 1;
         }
 #endif
@@ -1181,6 +1199,9 @@ int main(int argc, char **argv) {
         if (!sdr_started && sdrplay_serial) {
             sdrplay_ctx = sdrplay_setup(sdrplay_serial);
             pthread_create(&sdrplay_thread, NULL, sdrplay_stream_thread, sdrplay_ctx);
+#ifdef __linux__
+            pthread_setname_np(sdrplay_thread, "sdr-rx");
+#endif
             sdr_started = 1;
         }
 #endif
@@ -1188,6 +1209,9 @@ int main(int argc, char **argv) {
         if (!sdr_started && sidekiq_dev) {
             sidekiq_ctx = sidekiq_setup(sidekiq_dev);
             pthread_create(&sidekiq_thread, NULL, sidekiq_stream_thread, sidekiq_ctx);
+#ifdef __linux__
+            pthread_setname_np(sidekiq_thread, "sdr-rx");
+#endif
             sdr_started = 1;
         }
 #endif
