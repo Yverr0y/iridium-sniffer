@@ -389,6 +389,7 @@ static void *spewer_thread(void *arg) {
         }
         s->num = r;
         s->hw_timestamp_ns = 0;
+        atomic_fetch_add(&stat_sample_count, r);
         if (blocking_queue_put(&samples_queue, s) != 0) {
             free(s);
             break;
