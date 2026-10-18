@@ -205,6 +205,7 @@ static void usage(int exitcode) {
 "    --position[=HEIGHT_M]   estimate receiver position from Doppler shift\n"
 "                             optional height aiding in meters (implies --web)\n"
 "    --voice                 decode Iridium voice calls (AMBE, implies --web)\n"
+"                             experimental, needs a -DENABLE_VOICE=ON build\n"
 "\n"
 "GSMTAP:\n"
 "    --gsmtap[=HOST:PORT]    send IDA frames as GSMTAP/LAPDm via UDP\n"
@@ -698,8 +699,12 @@ void parse_options(int argc, char **argv) {
             }
 
             case OPT_VOICE:
+#ifdef HAVE_VOICE
                 voice_enabled = 1;
                 web_enabled = 1;  /* voice implies web UI */
+#else
+                errx(1, "--voice requires a build with -DENABLE_VOICE=ON");
+#endif
                 break;
 
             case OPT_SOAPY_SETTING:

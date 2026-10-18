@@ -135,6 +135,9 @@ cmake .. -DUSE_OPENCL=OFF
 
 # Debug build with AddressSanitizer
 cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+# Experimental voice decoding (--voice), see Voice Decoding below
+cmake .. -DENABLE_VOICE=ON
 ```
 
 ## Quick Start
@@ -322,6 +325,20 @@ The solver runs every 10 seconds and requires at least 5 measurements from 2+ sa
 Height aiding constrains the altitude to a known value and significantly improves horizontal accuracy. Without it, the vertical component is poorly determined by Doppler-only measurements.
 
 Based on: Z. Tan et al., "New Method for Positioning Using IRIDIUM Satellite Signals of Opportunity," IEEE Access, vol. 7, 2019.
+
+## Voice Decoding (Experimental)
+
+Decodes Iridium voice calls and plays them back from a Calls tab in the web map. Not built by default: the AMBE codec it uses (vendored from [osmo-ir77](https://gitea.osmocom.org/satellite/osmo-ir77) in `codec/`) is AGPL-3.0, so it is only compiled when asked for.
+
+```bash
+cmake .. -DENABLE_VOICE=ON
+make
+
+# --voice implies --web
+./iridium-sniffer -i usrp-B210-SERIAL --voice
+```
+
+A normal build rejects `--voice` and leaves `codec/` out of the binary entirely.
 
 ## GSMTAP Output (Wireshark Integration)
 

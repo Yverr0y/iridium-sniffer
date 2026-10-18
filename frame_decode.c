@@ -567,6 +567,7 @@ int frame_decode(const demod_frame_t *frame, decoded_frame_t *out)
      * Detection: de-interleave 46 bits into 3 fields (lcw1/lcw2/lcw3),
      * validate with GF(2) polynomial remainder checks.
      * Reference: iridium-toolkit bitsparser.py de_interleave_lcw() */
+#ifdef HAVE_VOICE
     if (data_len >= 46 + 312) {
         /* Use the proper LCW decoder from ida_decode.c which handles
          * pair-swap, BCH error correction, and correct field boundaries. */
@@ -599,6 +600,7 @@ int frame_decode(const demod_frame_t *frame, decoded_frame_t *out)
             return 1;
         }
     }
+#endif
 
     return 0;
 }

@@ -37,7 +37,10 @@
 
 #include "web_map.h"
 #include "ida_decode.h"
+#ifdef HAVE_VOICE
 #include "voice_decode.h"
+extern int voice_enabled;
+#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -709,10 +712,13 @@ static int build_json(char *buf, int bufsize)
 
     pthread_mutex_unlock(&state.lock);
 
+#ifdef HAVE_VOICE
     /* Voice stats (uses separate lock, safe outside state.lock) */
-    off += snprintf(buf + off, bufsize - off,
-        ",\"total_voc\":%d,\"total_voice_calls\":%d",
-        voice_decode_total_frames(), voice_decode_total_calls());
+    if (voice_enabled)
+        off += snprintf(buf + off, bufsize - off,
+            ",\"voice\":1,\"total_voc\":%d,\"total_voice_calls\":%d",
+            voice_decode_total_frames(), voice_decode_total_calls());
+#endif
 
     off += snprintf(buf + off, bufsize - off, "}");
 
@@ -861,7 +867,7 @@ static const char HTML_PAGE[] =
 "<div id=\"bar\">\n"
 "  <span class=\"title\">iridium-sniffer</span>\n"
 "  <span class=\"tab active\" id=\"tab-map\" onclick=\"showTab('map')\">Map</span>\n"
-"  <span class=\"tab\" id=\"tab-calls\" onclick=\"showTab('calls')\">Calls"
+"  <span class=\"tab\" id=\"tab-calls\" style=\"display:none\" onclick=\"showTab('calls')\">Calls"
 "<span id=\"cbadge\" class=\"badge\" style=\"display:none\">0</span></span>\n"
 "  <span class=\"stat\">Beams <span id=\"n-beams\" class=\"val\">0</span></span>\n"
 "  <span class=\"stat\">MT <span id=\"n-mt\" class=\"val\">0</span></span>\n"
@@ -1162,6 +1168,7 @@ static const char HTML_PAGE[] =
 "    document.getElementById('voc-stat').style.display='';\n"
 "    document.getElementById('n-voc').textContent=d.total_voc;\n"
 "  }\n"
+"  if(d.voice)document.getElementById('tab-calls').style.display='';\n"
 "  var cb=document.getElementById('cbadge');\n"
 "  if(d.total_voice_calls>0){cb.textContent=d.total_voice_calls;cb.style.display='';}\n"
 "\n"
@@ -1494,7 +1501,8 @@ static void *client_thread(void *arg)
             free(json);
         }
         close(fd);
-    } else if (strcmp(path, "/api/calls") == 0) {
+#ifdef HAVE_VOICE
+    } else if (voice_enabled && strcmp(path, "/api/calls") == 0) {
         /* Voice calls JSON list */
         int n_calls = voice_decode_call_count();
         int bufsize = 256 + n_calls * 256;
@@ -1523,7 +1531,7 @@ static void *client_thread(void *arg)
             free(json);
         }
         close(fd);
-    } else if (strncmp(path, "/api/calls/", 11) == 0) {
+    } else if (voice_enabled && strncmp(path, "/api/calls/", 11) == 0) {
         /* Voice call audio: /api/calls/N/audio */
         int call_id = -1;
         if (sscanf(path + 11, "%d/audio", &call_id) == 1 && call_id >= 0) {
@@ -1583,6 +1591,7 @@ static void *client_thread(void *arg)
                           "bad call id", 11);
         }
         close(fd);
+#endif
     } else {
         send_response(fd, "404 Not Found", "text/plain", "404", 3);
         close(fd);

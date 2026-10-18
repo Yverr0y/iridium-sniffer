@@ -54,7 +54,9 @@
 #include "vita49.h"
 #include "ida_decode.h"
 #include "doppler_pos.h"
+#ifdef HAVE_VOICE
 #include "voice_decode.h"
+#endif
 #include "gsmtap.h"
 #include "sbd_acars.h"
 #include "fftw_lock.h"
@@ -656,12 +658,15 @@ static void *output_thread_fn(void *arg) {
                 } else if (decoded.type == FRAME_IBC) {
                     if (web_enabled)
                         web_map_add_sat(&decoded.ibc, decoded.timestamp);
-                } else if (decoded.type == FRAME_VOC) {
+                }
+#ifdef HAVE_VOICE
+                else if (decoded.type == FRAME_VOC) {
                     if (voice_enabled)
                         voice_decode_add_frame(&decoded.voc,
                                                 decoded.timestamp,
                                                 decoded.frequency);
                 }
+#endif
             }
         }
 
@@ -975,8 +980,10 @@ int main(int argc, char **argv) {
     if (web_enabled || gsmtap_enabled || position_enabled || voice_enabled)
         frame_decode_init();
 
+#ifdef HAVE_VOICE
     if (voice_enabled)
         voice_decode_init();
+#endif
 
     if (parsed_mode || gsmtap_enabled || acars_enabled || web_enabled || voice_enabled)
         ida_decode_init();
@@ -1338,8 +1345,10 @@ int main(int argc, char **argv) {
     pthread_join(output_worker, NULL);
     pthread_join(stats, NULL);
 
+#ifdef HAVE_VOICE
     if (voice_enabled)
         voice_decode_shutdown();
+#endif
 
     if (web_enabled)
         web_map_shutdown();

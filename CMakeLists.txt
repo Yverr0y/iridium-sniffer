@@ -121,6 +121,7 @@ endif()
 
 option(USE_OPENCL "Use OpenCL GPU acceleration for burst detection" ${OPENCL_DEFAULT})
 option(USE_VULKAN "Use Vulkan GPU acceleration for burst detection" OFF)
+option(ENABLE_VOICE "Build experimental AMBE voice decoding (codec/ is AGPL-3.0, see codec/LICENSE)" OFF)
 
 if(USE_OPENCL AND USE_VULKAN)
     message(FATAL_ERROR "USE_OPENCL and USE_VULKAN are mutually exclusive. Choose one.")
@@ -153,14 +154,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/aircraft_db.c
     ${PROJECT_SOURCE_DIR}/basestation.c
     ${PROJECT_SOURCE_DIR}/waypoint_db.c
-    ${PROJECT_SOURCE_DIR}/voice_decode.c
-    ${PROJECT_SOURCE_DIR}/codec/ambe.c
-    ${PROJECT_SOURCE_DIR}/codec/ecc.c
-    ${PROJECT_SOURCE_DIR}/codec/frame.c
-    ${PROJECT_SOURCE_DIR}/codec/math.c
-    ${PROJECT_SOURCE_DIR}/codec/synth.c
-    ${PROJECT_SOURCE_DIR}/codec/tables.c
-    ${PROJECT_SOURCE_DIR}/codec/tone.c
 )
 
 # SIMD kernels — platform-specific, runtime-detected
@@ -264,6 +257,25 @@ if(LIBACARS_FOUND)
     message(STATUS "libacars: enabled (ARINC-622/ADS-C/CPDLC decoding)")
 else()
     message(STATUS "libacars: not found (basic ACARS only)")
+endif()
+
+# Voice call decoding (--voice). Off by default: the vendored osmo-ir77
+# AMBE codec in codec/ is AGPL-3.0, so it is only compiled on request.
+if(ENABLE_VOICE)
+    target_sources(iridium-sniffer PRIVATE
+        ${PROJECT_SOURCE_DIR}/voice_decode.c
+        ${PROJECT_SOURCE_DIR}/codec/ambe.c
+        ${PROJECT_SOURCE_DIR}/codec/ecc.c
+        ${PROJECT_SOURCE_DIR}/codec/frame.c
+        ${PROJECT_SOURCE_DIR}/codec/math.c
+        ${PROJECT_SOURCE_DIR}/codec/synth.c
+        ${PROJECT_SOURCE_DIR}/codec/tables.c
+        ${PROJECT_SOURCE_DIR}/codec/tone.c
+    )
+    target_compile_definitions(iridium-sniffer PRIVATE HAVE_VOICE)
+    message(STATUS "Voice: enabled (experimental, AGPL-3.0 AMBE codec)")
+else()
+    message(STATUS "Voice: disabled (-DENABLE_VOICE=ON to build --voice)")
 endif()
 
 # ZMQ PUB/SUB output
