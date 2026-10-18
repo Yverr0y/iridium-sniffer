@@ -1075,6 +1075,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for design documentation covering the sig
 
 GNU General Public License v3.0 or later. See [LICENSE](LICENSE).
 
+The vendored AMBE codec in [codec/](codec/) is AGPL-3.0-or-later (see [codec/LICENSE](codec/LICENSE) and [codec/COPYING](codec/COPYING)) and is only compiled when building with `-DENABLE_VOICE=ON`.
+
 ## Acknowledgments
 
 This project builds on the work of several open-source projects:

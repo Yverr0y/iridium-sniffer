@@ -1,5 +1,9 @@
 Iridium AMBE vocoder codec
 Vendored from: https://gitea.osmocom.org/satellite/osmo-ir77
+Upstream commit: 6f7b0702a6cd (2017-12-02), codec/ directory
+
+The files here are unmodified copies of upstream. Only compiled when
+iridium-sniffer is configured with -DENABLE_VOICE=ON.
 
 Copyright (C) 2015 Sylvain Munaut <tnt@246tNt.com>
 
@@ -15,3 +19,13 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+The full text of the GNU Affero General Public License v3 is in COPYING
+in this directory.
+
+compat_bits.h carries no license header upstream. Its one function,
+osmo_pbit2ubit_ext(), comes from libosmocore src/core/bits.c:
+
+  (C) 2011 by Harald Welte <laforge@gnumonks.org>
+  (C) 2011 by Sylvain Munaut <tnt@246tNt.com>
+  SPDX-License-Identifier: GPL-2.0-or-later
