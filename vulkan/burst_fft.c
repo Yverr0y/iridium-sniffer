@@ -288,12 +288,20 @@ GPU_API gpu_burst_fft_t *gpu_burst_fft_create(int fft_size, int batch_size,
         goto err_fence;
     }
 
-    /* Find host-visible, coherent memory */
+    /* Find host-visible, coherent memory. Prefer HOST_CACHED: the CPU reads
+     * every FFT result back out of this buffer, and the first plain
+     * host-visible type is usually uncached write-combined memory, where
+     * those reads are an order of magnitude slower. That alone made the
+     * detector fall behind real time on some GPUs. */
     VkMemoryRequirements mem_reqs;
     vkGetBufferMemoryRequirements(g->device, g->buffer, &mem_reqs);
 
     uint32_t mem_type = find_memory_type(g->physical_device, mem_reqs.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+        VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    if (mem_type == UINT32_MAX)
+        mem_type = find_memory_type(g->physical_device, mem_reqs.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (mem_type == UINT32_MAX) {
         fprintf(stderr, "Vulkan: no suitable memory type found\n");
         goto err_buffer;
