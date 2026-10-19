@@ -831,6 +831,13 @@ void parse_options(int argc, char **argv) {
         }
     }
 
+    /* No positional arguments are taken. Without this, an option typed with
+     * a Unicode dash (as some editors and phones substitute) is skipped by
+     * getopt and silently ignored. */
+    if (optind < argc)
+        errx(1, "unexpected argument '%s' (options start with two ASCII "
+             "hyphens, e.g. --no-gpu)", argv[optind]);
+
     /* -i implies live capture */
     if (serial
 #ifdef HAVE_BLADERF
